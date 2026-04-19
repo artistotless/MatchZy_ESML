@@ -49,23 +49,7 @@ jobs:
 
             ssh-keyscan -p "$port" "$host" >> ~/.ssh/known_hosts 2>/dev/null
 
-            $SSH_CMD "$user@$host" bash -s -- "$path" <<'REMOTE_SCRIPT'
-              PLUGIN_DIR="$1"
-              mkdir -p "$PLUGIN_DIR"
-
-              # Backup current contents (excluding old archives)
-              if [ "$(ls -A "$PLUGIN_DIR" 2>/dev/null | grep -v '^MatchZy\.zip$' | grep -v '^MatchZy_backup\.zip$')" ]; then
-                cd "$PLUGIN_DIR"
-                rm -f MatchZy_backup.zip
-                zip -qr MatchZy_backup.zip . -x MatchZy.zip MatchZy_backup.zip
-                echo "Backup created: $PLUGIN_DIR/MatchZy_backup.zip"
-              else
-                echo "Plugin directory is empty, skipping backup"
-              fi
-
-              # Remove old deploy archive if exists
-              rm -f "$PLUGIN_DIR/MatchZy.zip"
-REMOTE_SCRIPT
+            $SSH_CMD "$user@$host" "mkdir -p '$path' && cd '$path' && if ls -A . 2>/dev/null | grep -qvE '^MatchZy(_backup)?\.zip\$'; then rm -f MatchZy_backup.zip && zip -qr MatchZy_backup.zip . -x MatchZy.zip MatchZy_backup.zip && echo 'Backup created'; else echo 'No files to backup'; fi && rm -f MatchZy.zip"
 
             scp -i ~/.ssh/deploy_key -P "$port" -o StrictHostKeyChecking=no \
               MatchZy.zip "$user@$host:$path/MatchZy.zip"
