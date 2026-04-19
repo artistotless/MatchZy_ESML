@@ -49,7 +49,7 @@ jobs:
 
             ssh-keyscan -p "$port" "$host" >> ~/.ssh/known_hosts 2>/dev/null
 
-            $SSH_CMD "$user@$host" "mkdir -p '$path' && cd '$path' && if ls -A . 2>/dev/null | grep -qvE '^MatchZy(_backup)?\.zip\$'; then rm -f MatchZy_backup.zip && zip -qr MatchZy_backup.zip . -x MatchZy.zip MatchZy_backup.zip && echo 'Backup created'; else echo 'No files to backup'; fi && rm -f MatchZy.zip"
+            $SSH_CMD "$user@$host" "mkdir -p '$path' && cd '$path' && if ls -A . 2>/dev/null | grep -qvE '^MatchZy(_backup)?\.tar\.gz\$' | grep -qvE '^MatchZy\.zip\$'; then rm -f MatchZy_backup.tar.gz && tar czf MatchZy_backup.tar.gz --exclude=MatchZy.zip --exclude=MatchZy_backup.tar.gz . && echo 'Backup created'; else echo 'No files to backup'; fi && rm -f MatchZy.zip"
 
             scp -i ~/.ssh/deploy_key -P "$port" -o StrictHostKeyChecking=no \
               MatchZy.zip "$user@$host:$path/MatchZy.zip"
