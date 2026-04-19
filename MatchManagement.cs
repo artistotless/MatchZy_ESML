@@ -82,7 +82,6 @@ namespace MatchZy
             }
         }
 
-        [ConsoleCommand("get5_loadmatch_url", "Loads a match from the given URL")]
         [ConsoleCommand("matchzy_loadmatch_url", "Loads a match from the given URL")]
         public void LoadMatchFromURL(CCSPlayerController? player, CommandInfo command)
         {
@@ -266,7 +265,7 @@ namespace MatchZy
 
             if(jsonDataObject["matchid"] != null)
             {
-                liveMatchId = (long)jsonDataObject["matchid"]!;
+                liveMatchId = jsonDataObject["matchid"]!.ToString();
             }
             JToken team1 = jsonDataObject["team1"]!;
             JToken team2 = jsonDataObject["team2"]!;
@@ -355,7 +354,7 @@ namespace MatchZy
 
             readyAvailable = true;
 
-            // This is done before starting warmup so that cvars like get5_remote_log_url are set properly to send the events
+            // This is done before starting warmup so that cvars like matchzy_remote_log_url are set properly to send the events
             ExecuteChangedConvars();
 
             StartWarmup();
@@ -577,7 +576,7 @@ namespace MatchZy
 
         public void EndSeries(string? winnerName, int restartDelay, int t1score, int t2score)
         {
-            long matchId = liveMatchId;
+            string matchId = liveMatchId;
             (int team1Score, int team2Score) = (matchzyTeam1.seriesScore, matchzyTeam2.seriesScore);
             if (winnerName == null)
             {

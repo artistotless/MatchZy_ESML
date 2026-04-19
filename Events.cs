@@ -15,7 +15,7 @@ public class MatchZyEvent
 public class MatchZyMatchEvent : MatchZyEvent
 {
     [JsonPropertyName("matchid")]
-    public required long MatchId { get; init; }
+    public required string MatchId { get; init; }
 
     protected MatchZyMatchEvent(string eventName) : base(eventName)
     {
@@ -235,4 +235,172 @@ public class MatchZyDemoUploadedEvent : MatchZyMatchEvent
     public MatchZyDemoUploadedEvent() : base("demo_upload_ended")
     {
     }
+}
+
+// Realtime events (GSI-like, sent on matchzy_realtime_log_url)
+
+public class RealtimePlayerInfo
+{
+    [JsonPropertyName("steamid")]
+    public required string SteamId { get; init; }
+
+    [JsonPropertyName("name")]
+    public required string Name { get; init; }
+
+    [JsonPropertyName("team")]
+    public required string Team { get; init; }
+
+    [JsonPropertyName("alive")]
+    public required bool Alive { get; init; }
+
+    [JsonPropertyName("hp")]
+    public required int Hp { get; init; }
+
+    [JsonPropertyName("armor")]
+    public required int Armor { get; init; }
+
+    [JsonPropertyName("money")]
+    public required int Money { get; init; }
+
+    [JsonPropertyName("kills")]
+    public required int Kills { get; init; }
+
+    [JsonPropertyName("deaths")]
+    public required int Deaths { get; init; }
+
+    [JsonPropertyName("assists")]
+    public required int Assists { get; init; }
+}
+
+public class RealtimeRoundStartEvent : MatchZyEvent
+{
+    [JsonPropertyName("matchid")]
+    public required string MatchId { get; init; }
+
+    [JsonPropertyName("map")]
+    public required string Map { get; init; }
+
+    [JsonPropertyName("map_number")]
+    public required int MapNumber { get; init; }
+
+    [JsonPropertyName("round_number")]
+    public required int RoundNumber { get; init; }
+
+    [JsonPropertyName("team1_score")]
+    public required int Team1Score { get; init; }
+
+    [JsonPropertyName("team2_score")]
+    public required int Team2Score { get; init; }
+
+    [JsonPropertyName("players")]
+    public required List<RealtimePlayerInfo> Players { get; init; }
+
+    public RealtimeRoundStartEvent() : base("round_start") { }
+}
+
+public class RealtimePlayerDeathEvent : MatchZyEvent
+{
+    [JsonPropertyName("matchid")]
+    public required string MatchId { get; init; }
+
+    [JsonPropertyName("map")]
+    public required string Map { get; init; }
+
+    [JsonPropertyName("map_number")]
+    public required int MapNumber { get; init; }
+
+    [JsonPropertyName("round_number")]
+    public required int RoundNumber { get; init; }
+
+    [JsonPropertyName("attacker")]
+    public RealtimePlayerInfo? Attacker { get; init; }
+
+    [JsonPropertyName("victim")]
+    public required RealtimePlayerInfo Victim { get; init; }
+
+    [JsonPropertyName("weapon")]
+    public required string Weapon { get; init; }
+
+    [JsonPropertyName("headshot")]
+    public required bool Headshot { get; init; }
+
+    [JsonPropertyName("thru_smoke")]
+    public required bool ThruSmoke { get; init; }
+
+    [JsonPropertyName("blind")]
+    public required bool Blind { get; init; }
+
+    public RealtimePlayerDeathEvent() : base("player_death") { }
+}
+
+public class RealtimePlayerHurtEvent : MatchZyEvent
+{
+    [JsonPropertyName("matchid")]
+    public required string MatchId { get; init; }
+
+    [JsonPropertyName("map")]
+    public required string Map { get; init; }
+
+    [JsonPropertyName("map_number")]
+    public required int MapNumber { get; init; }
+
+    [JsonPropertyName("round_number")]
+    public required int RoundNumber { get; init; }
+
+    [JsonPropertyName("attacker")]
+    public RealtimePlayerInfo? Attacker { get; init; }
+
+    [JsonPropertyName("victim")]
+    public required RealtimePlayerInfo Victim { get; init; }
+
+    [JsonPropertyName("weapon")]
+    public required string Weapon { get; init; }
+
+    [JsonPropertyName("dmg_health")]
+    public required int DmgHealth { get; init; }
+
+    [JsonPropertyName("dmg_armor")]
+    public required int DmgArmor { get; init; }
+
+    [JsonPropertyName("hitgroup")]
+    public required int Hitgroup { get; init; }
+
+    public RealtimePlayerHurtEvent() : base("player_hurt") { }
+}
+
+public class RealtimeBombEvent : MatchZyEvent
+{
+    [JsonPropertyName("matchid")]
+    public required string MatchId { get; init; }
+
+    [JsonPropertyName("map")]
+    public required string Map { get; init; }
+
+    [JsonPropertyName("map_number")]
+    public required int MapNumber { get; init; }
+
+    [JsonPropertyName("round_number")]
+    public required int RoundNumber { get; init; }
+
+    [JsonPropertyName("player")]
+    public required RealtimePlayerInfo Player { get; init; }
+
+    [JsonPropertyName("site")]
+    public required string Site { get; init; }
+
+    public RealtimeBombEvent(string eventName) : base(eventName) { }
+}
+
+public class RealtimePlayerConnectEvent : MatchZyEvent
+{
+    [JsonPropertyName("matchid")]
+    public required string MatchId { get; init; }
+
+    [JsonPropertyName("map")]
+    public required string Map { get; init; }
+
+    [JsonPropertyName("player")]
+    public required RealtimePlayerInfo Player { get; init; }
+
+    public RealtimePlayerConnectEvent(string eventName) : base(eventName) { }
 }

@@ -14,7 +14,7 @@ public partial class MatchZy
         // Tech Pause is WIP
         return;
 
-        if (!isMatchLive) return;
+        if(!isMatchLive) return;
 
         // Treating .tech command as .forcepause if it is used via server console.
         if (player == null)

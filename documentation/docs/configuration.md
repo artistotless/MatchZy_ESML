@@ -81,6 +81,12 @@ Again, inside `csgo/cfg/MatchZy`, a file named `config.cfg` should be present. T
 :   If defined, recorded demo will be [uploaded](../gotv#automatic-upload) to this URL once the map ends. Make sure that the URL is wrapped in double quotes (""). 
 Example: `matchzy_demo_upload_url "https://your-website.com/upload-endpoint"` <br>**`Default: ""`**
 
+####`matchzy_demo_upload_s3_url`
+:   If defined, MatchZy will request a presigned S3 upload URL from this endpoint when a demo recording stops. MatchZy sends a `POST` request with `{ "matchId": "...", "mapNumber": "..." }` in the body (uses `matchzy_remote_log_header_key`/`matchzy_remote_log_header_value` for auth). The endpoint must respond with JSON containing an `uploadUrl` field — a presigned S3 PUT URL. MatchZy will then upload the demo file via `PUT` to that URL.<br>Example: `matchzy_demo_upload_s3_url "https://your-api.com/api/matchzy/demoS3Url"` <br>**`Default: ""`**
+
+####`matchzy_demo_upload_s3_notify_url`
+:   If defined, MatchZy sends a `POST` notification to this URL after successfully uploading the demo to S3. Body: `{ "matchId": "...", "mapNumber": "..." }`. Uses `matchzy_remote_log_header_key`/`matchzy_remote_log_header_value` for auth. Requires `matchzy_demo_upload_s3_url` to be set.<br>Example: `matchzy_demo_upload_s3_notify_url "https://your-api.com/api/matchzy/demoUploaded"` <br>**`Default: ""`**
+
 ####`matchzy_kick_when_no_match_loaded`
 :   Whether to kick all clients and prevent anyone from joining the server if no match is loaded. This means if server is in match mode, a match needs to be set-up using `matchzy_loadmatch`/`matchzy_loadmatch_url` to load and configure a match.<br>**`Default: false`**
 

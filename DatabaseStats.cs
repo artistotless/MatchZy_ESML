@@ -1,13 +1,9 @@
-using System;
-using System.IO;
 using System.Data;
 using System.Text.Json;
 using System.Globalization;
 using Microsoft.Data.Sqlite;
 using Dapper;
 using CounterStrikeSharp.API;
-using CounterStrikeSharp.API.Core;
-using CounterStrikeSharp.API.Modules.Memory;
 using CsvHelper;
 using CsvHelper.Configuration;
 using MySqlConnector;
@@ -18,7 +14,7 @@ namespace MatchZy
 {
     public class Database
     {
-        private IDbConnection connection;
+        private IDbConnection connection = null!;
 
         DatabaseConfig? config;
         public DatabaseType databaseType { get; set; }
@@ -33,9 +29,12 @@ namespace MatchZy
                 Log($"[InitializeDatabase] {dbType} Database connection successful");
 
                 // Create the `matchzy_stats_matches`, `matchzy_stats_players` and `matchzy_stats_maps` tables if they doesn't exist
-                if (connection is SqliteConnection) {
+                if (connection is SqliteConnection)
+                {
                     CreateRequiredTablesSQLite();
-                } else {
+                }
+                else
+                {
                     CreateRequiredTablesSQL();
                 }
 
@@ -64,7 +63,7 @@ namespace MatchZy
                 else if (config != null && databaseType == DatabaseType.MySQL)
                 {
                     string connectionString = $"Server={config.MySqlHost};Port={config.MySqlPort};Database={config.MySqlDatabase};User Id={config.MySqlUsername};Password={config.MySqlPassword};";
-                    connection = new MySqlConnection(connectionString);           
+                    connection = new MySqlConnection(connectionString);
                 }
                 else
                 {
@@ -72,7 +71,7 @@ namespace MatchZy
                     connection = new SqliteConnection($"Data Source={Path.Join(directory, "matchzy.db")}");
                     databaseType = DatabaseType.SQLite;
                 }
-            } 
+            }
             catch (Exception ex)
             {
                 Log($"[InitializeDatabase - FATAL] Database connection error: {ex.Message}");
@@ -169,7 +168,7 @@ namespace MatchZy
                     team2_score INT NOT NULL DEFAULT 0,
                     server_ip VARCHAR(255) NOT NULL DEFAULT '0'
                 )");
-                
+
             connection.Execute($@"
             CREATE TABLE IF NOT EXISTS matchzy_stats_maps (
                 matchid INT NOT NULL,
@@ -229,20 +228,24 @@ namespace MatchZy
             )");
         }
 
-        public long InitMatch(string team1name, string team2name, string serverIp, bool isMatchSetup, long liveMatchId, int mapNumber, string seriesType, MatchConfig matchConfig)
+        public string InitMatch(string team1name, string team2name, string serverIp, bool isMatchSetup, string liveMatchId, int mapNumber, string seriesType, MatchConfig matchConfig)
         {
             try
             {
                 string mapName = isMatchSetup ? matchConfig.Maplist[mapNumber] : Server.MapName;
                 string dateTimeExpression = (connection is SqliteConnection) ? "datetime('now')" : "NOW()";
 
-                if (mapNumber == 0) {
-                    if (isMatchSetup && liveMatchId != -1) {
+                if (mapNumber == 0)
+                {
+                    if (isMatchSetup && !string.IsNullOrEmpty(liveMatchId))
+                    {
                         connection.Execute(@"
                             INSERT INTO matchzy_stats_matches (matchid, start_time, team1_name, team2_name, series_type, server_ip)
                             VALUES (@liveMatchId, " + dateTimeExpression + ", @team1name, @team2name, @seriesType, @serverIp)",
                             new { liveMatchId, team1name, team2name, seriesType, serverIp });
-                    } else {
+                    }
+                    else
+                    {
                         connection.Execute(@"
                             INSERT INTO matchzy_stats_matches (start_time, team1_name, team2_name, series_type, server_ip)
                             VALUES (" + dateTimeExpression + ", @team1name, @team2name, @seriesType, @serverIp)",
@@ -250,7 +253,8 @@ namespace MatchZy
                     }
                 }
 
-                if (isMatchSetup && liveMatchId != -1) {
+                if (isMatchSetup && !string.IsNullOrEmpty(liveMatchId))
+                {
                     connection.Execute(@"
                         INSERT INTO matchzy_stats_maps (matchid, start_time, mapnumber, mapname)
                         VALUES (@liveMatchId, " + dateTimeExpression + ", @mapNumber, @mapName)",
@@ -259,14 +263,14 @@ namespace MatchZy
                 }
 
                 // Retrieve the last inserted match_id
-                long matchId = -1;
+                string matchId = "";
                 if (connection is SqliteConnection)
                 {
-                    matchId = connection.ExecuteScalar<long>("SELECT last_insert_rowid()");
+                    matchId = connection.ExecuteScalar<long>("SELECT last_insert_rowid()").ToString();
                 }
                 else if (connection is MySqlConnection)
                 {
-                    matchId = connection.ExecuteScalar<long>("SELECT LAST_INSERT_ID()");
+                    matchId = connection.ExecuteScalar<long>("SELECT LAST_INSERT_ID()").ToString();
                 }
 
                 connection.Execute(@"
@@ -284,7 +288,8 @@ namespace MatchZy
             }
         }
 
-        public void UpdateTeamData(int matchId, string team1name, string team2name) {
+        public void UpdateTeamData(string matchId, string team1name, string team2name)
+        {
             try
             {
                 connection.Execute(@"
@@ -301,7 +306,7 @@ namespace MatchZy
             }
         }
 
-        public async Task SetMapEndData(long matchId, int mapNumber, string winnerName, int t1score, int t2score, int team1SeriesScore, int team2SeriesScore)
+        public async Task SetMapEndData(string matchId, int mapNumber, string winnerName, int t1score, int t2score, int team1SeriesScore, int team2SeriesScore)
         {
             try
             {
@@ -326,10 +331,10 @@ namespace MatchZy
             catch (Exception ex)
             {
                 Log($"[SetMapEndData - FATAL] Error updating data of matchId: {matchId} mapNumber: {mapNumber} [ERROR]: {ex.Message}");
-            } 
+            }
         }
 
-        public async Task SetMatchEndData(long matchId, string winnerName, int t1score, int t2score)
+        public async Task SetMatchEndData(string matchId, string winnerName, int t1score, int t2score)
         {
             try
             {
@@ -350,7 +355,7 @@ namespace MatchZy
             }
         }
 
-        public async Task UpdateMapStatsAsync(long matchId, int mapNumber, int t1score, int t2score)
+        public async Task UpdateMapStatsAsync(string matchId, int mapNumber, int t1score, int t2score)
         {
             try
             {
@@ -367,7 +372,7 @@ namespace MatchZy
             }
         }
 
-        public async Task UpdatePlayerStatsAsync(long matchId, int mapNumber, Dictionary<ulong, Dictionary<string, object>> playerStatsDictionary)
+        public async Task UpdatePlayerStatsAsync(string matchId, int mapNumber, Dictionary<ulong, Dictionary<string, object>> playerStatsDictionary)
         {
             try
             {
@@ -409,7 +414,8 @@ namespace MatchZy
                         kill_reward = @kill_reward, live_time = @live_time, head_shot_kills = @head_shot_kills,
                         cash_earned = @cash_earned, enemies_flashed = @enemies_flashed";
 
-                    if (connection is SqliteConnection) {
+                    if (connection is SqliteConnection)
+                    {
                         sqlQuery = @"
                         INSERT OR REPLACE INTO matchzy_stats_players (
                             matchid, mapnumber, steamid64, team, name, kills, deaths, damage, assists,
@@ -479,9 +485,10 @@ namespace MatchZy
             }
         }
 
-        public async Task WritePlayerStatsToCsv(string filePath, long matchId, int mapNumber)
+        public async Task WritePlayerStatsToCsv(string filePath, string matchId, int mapNumber)
         {
-            try {
+            try
+            {
                 string csvFilePath = $"{filePath}/match_data_map{mapNumber}_{matchId}.csv";
                 string? directoryPath = Path.GetDirectoryName(csvFilePath);
                 if (directoryPath != null)
@@ -564,12 +571,15 @@ namespace MatchZy
                 string jsonContent = File.ReadAllText(configFile);
                 config = JsonSerializer.Deserialize<DatabaseConfig>(jsonContent);
                 // Set the database type
-                if (config != null && config.DatabaseType?.Trim().ToLower() == "mysql") {
+                if (config != null && config.DatabaseType?.Trim().ToLower() == "mysql")
+                {
                     databaseType = DatabaseType.MySQL;
-                } else {
+                }
+                else
+                {
                     databaseType = DatabaseType.SQLite;
                 }
-                
+
             }
             catch (JsonException ex)
             {

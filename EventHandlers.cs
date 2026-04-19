@@ -6,6 +6,227 @@ using CounterStrikeSharp.API.Modules.Utils;
 namespace MatchZy;
 public partial class MatchZy
 {
+    // -----------------------------------------------------------------------
+    // Realtime event handlers (GSI-like feed, sent to matchzy_remote_log_url
+    // when matchzy_realtime_events_enabled = 1)
+    // -----------------------------------------------------------------------
+
+    public HookResult RealtimeRoundStartHandler(EventRoundStart @event, GameEventInfo info)
+    {
+        try
+        {
+            if (!matchStarted || !matchConfig.RealtimeEventsEnabled) return HookResult.Continue;
+
+            (int t1score, int t2score) = GetTeamsScore();
+            _ = SendRealtimeEventAsync(new RealtimeRoundStartEvent
+            {
+                MatchId     = liveMatchId,
+                Map         = CurrentMapName(),
+                MapNumber   = matchConfig.CurrentMapNumber,
+                RoundNumber = t1score + t2score,
+                Team1Score  = t1score,
+                Team2Score  = t2score,
+                Players     = BuildAllPlayersInfo(),
+            });
+        }
+        catch (Exception e)
+        {
+            Log($"[RealtimeRoundStartHandler FATAL] An error occurred: {e.Message}");
+        }
+        return HookResult.Continue;
+    }
+
+    public HookResult RealtimePlayerDeathHandler(EventPlayerDeath @event, GameEventInfo info)
+    {
+        try
+        {
+            if (!matchStarted || !matchConfig.RealtimeEventsEnabled) return HookResult.Continue;
+
+            var victimInfo = BuildPlayerInfo(@event.Userid);
+            if (victimInfo == null) return HookResult.Continue;
+
+            (int t1score, int t2score) = GetTeamsScore();
+            _ = SendRealtimeEventAsync(new RealtimePlayerDeathEvent
+            {
+                MatchId    = liveMatchId,
+                Map        = CurrentMapName(),
+                MapNumber  = matchConfig.CurrentMapNumber,
+                RoundNumber = t1score + t2score,
+                Attacker   = BuildPlayerInfo(@event.Attacker),
+                Victim     = victimInfo,
+                Weapon     = @event.Weapon,
+                Headshot   = @event.Headshot,
+                ThruSmoke  = @event.Thrusmoke,
+                Blind      = @event.Attackerblind,
+            });
+        }
+        catch (Exception e)
+        {
+            Log($"[RealtimePlayerDeathHandler FATAL] An error occurred: {e.Message}");
+        }
+        return HookResult.Continue;
+    }
+
+    public HookResult RealtimePlayerHurtHandler(EventPlayerHurt @event, GameEventInfo info)
+    {
+        try
+        {
+            if (!matchStarted || !matchConfig.RealtimeEventsEnabled) return HookResult.Continue;
+
+            var victimInfo = BuildPlayerInfo(@event.Userid);
+            if (victimInfo == null) return HookResult.Continue;
+
+            (int t1score, int t2score) = GetTeamsScore();
+            _ = SendRealtimeEventAsync(new RealtimePlayerHurtEvent
+            {
+                MatchId    = liveMatchId,
+                Map        = CurrentMapName(),
+                MapNumber  = matchConfig.CurrentMapNumber,
+                RoundNumber = t1score + t2score,
+                Attacker   = BuildPlayerInfo(@event.Attacker),
+                Victim     = victimInfo,
+                Weapon     = @event.Weapon,
+                DmgHealth  = @event.DmgHealth,
+                DmgArmor   = @event.DmgArmor,
+                Hitgroup   = @event.Hitgroup,
+            });
+        }
+        catch (Exception e)
+        {
+            Log($"[RealtimePlayerHurtHandler FATAL] An error occurred: {e.Message}");
+        }
+        return HookResult.Continue;
+    }
+
+    public HookResult RealtimeBombPlantedHandler(EventBombPlanted @event, GameEventInfo info)
+    {
+        try
+        {
+            if (!matchStarted || !matchConfig.RealtimeEventsEnabled) return HookResult.Continue;
+
+            var playerInfo = BuildPlayerInfo(@event.Userid);
+            if (playerInfo == null) return HookResult.Continue;
+
+            (int t1score, int t2score) = GetTeamsScore();
+            _ = SendRealtimeEventAsync(new RealtimeBombEvent("bomb_planted")
+            {
+                MatchId    = liveMatchId,
+                Map        = CurrentMapName(),
+                MapNumber  = matchConfig.CurrentMapNumber,
+                RoundNumber = t1score + t2score,
+                Player     = playerInfo,
+                Site       = @event.Site == 0 ? "A" : "B",
+            });
+        }
+        catch (Exception e)
+        {
+            Log($"[RealtimeBombPlantedHandler FATAL] An error occurred: {e.Message}");
+        }
+        return HookResult.Continue;
+    }
+
+    public HookResult RealtimeBombDefusedHandler(EventBombDefused @event, GameEventInfo info)
+    {
+        try
+        {
+            if (!matchStarted || !matchConfig.RealtimeEventsEnabled) return HookResult.Continue;
+
+            var playerInfo = BuildPlayerInfo(@event.Userid);
+            if (playerInfo == null) return HookResult.Continue;
+
+            (int t1score, int t2score) = GetTeamsScore();
+            _ = SendRealtimeEventAsync(new RealtimeBombEvent("bomb_defused")
+            {
+                MatchId    = liveMatchId,
+                Map        = CurrentMapName(),
+                MapNumber  = matchConfig.CurrentMapNumber,
+                RoundNumber = t1score + t2score,
+                Player     = playerInfo,
+                Site       = @event.Site == 0 ? "A" : "B",
+            });
+        }
+        catch (Exception e)
+        {
+            Log($"[RealtimeBombDefusedHandler FATAL] An error occurred: {e.Message}");
+        }
+        return HookResult.Continue;
+    }
+
+    public HookResult RealtimeBombExplodedHandler(EventBombExploded @event, GameEventInfo info)
+    {
+        try
+        {
+            if (!matchStarted || !matchConfig.RealtimeEventsEnabled) return HookResult.Continue;
+
+            (int t1score, int t2score) = GetTeamsScore();
+            _ = SendRealtimeEventAsync(new RealtimeBombEvent("bomb_exploded")
+            {
+                MatchId    = liveMatchId,
+                Map        = CurrentMapName(),
+                MapNumber  = matchConfig.CurrentMapNumber,
+                RoundNumber = t1score + t2score,
+                // EventBombExploded has no player/site fields in CSSharp, use placeholders
+                Player = new RealtimePlayerInfo
+                {
+                    SteamId = "0", Name = "", Team = "T",
+                    Alive = false, Hp = 0, Armor = 0, Money = 0,
+                    Kills = 0, Deaths = 0, Assists = 0,
+                },
+                Site = @event.Site == 0 ? "A" : "B",
+            });
+        }
+        catch (Exception e)
+        {
+            Log($"[RealtimeBombExplodedHandler FATAL] An error occurred: {e.Message}");
+        }
+        return HookResult.Continue;
+    }
+
+    public HookResult RealtimePlayerConnectHandler(EventPlayerConnectFull @event, GameEventInfo info)
+    {
+        try
+        {
+            if (!matchConfig.RealtimeEventsEnabled) return HookResult.Continue;
+
+            var playerInfo = BuildPlayerInfo(@event.Userid);
+            if (playerInfo == null) return HookResult.Continue;
+
+            _ = SendRealtimeEventAsync(new RealtimePlayerConnectEvent("player_connect")
+            {
+                MatchId = liveMatchId,
+                Map     = CurrentMapName(),
+                Player  = playerInfo,
+            });
+        }
+        catch (Exception e)
+        {
+            Log($"[RealtimePlayerConnectHandler FATAL] An error occurred: {e.Message}");
+        }
+        return HookResult.Continue;
+    }
+
+    public HookResult RealtimePlayerDisconnectHandler(EventPlayerDisconnect @event, GameEventInfo info)
+    {
+        try
+        {
+            if (!matchConfig.RealtimeEventsEnabled) return HookResult.Continue;
+
+            var playerInfo = BuildPlayerInfo(@event.Userid);
+            if (playerInfo == null) return HookResult.Continue;
+
+            _ = SendRealtimeEventAsync(new RealtimePlayerConnectEvent("player_disconnect")
+            {
+                MatchId = liveMatchId,
+                Map     = CurrentMapName(),
+                Player  = playerInfo,
+            });
+        }
+        catch (Exception e)
+        {
+            Log($"[RealtimePlayerDisconnectHandler FATAL] An error occurred: {e.Message}");
+        }
+        return HookResult.Continue;
+    }
     public HookResult EventPlayerConnectFullHandler(EventPlayerConnectFull @event, GameEventInfo info)
     {
         try

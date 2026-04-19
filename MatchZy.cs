@@ -32,7 +32,7 @@ namespace MatchZy
         public bool isKnifeRound = false;
         public bool isSideSelectionPhase = false;
         public bool isMatchLive = false;
-        public long liveMatchId = -1;
+        public string liveMatchId = "";
         public int autoStartMode = 1;
 
         public bool mapReloadRequired = false;
@@ -213,6 +213,16 @@ namespace MatchZy
             RegisterEventHandler<EventRoundFreezeEnd>(EventRoundFreezeEndHandler);
             RegisterEventHandler<EventPlayerGivenC4>(EventPlayerGivenC4);
             RegisterEventHandler<EventPlayerDeath>(EventPlayerDeathPreHandler, hookMode: HookMode.Pre);
+
+            // Realtime (GSI-like) event handlers
+            RegisterEventHandler<EventRoundStart>(RealtimeRoundStartHandler);
+            RegisterEventHandler<EventPlayerDeath>(RealtimePlayerDeathHandler);
+            RegisterEventHandler<EventPlayerHurt>(RealtimePlayerHurtHandler);
+            RegisterEventHandler<EventBombPlanted>(RealtimeBombPlantedHandler);
+            RegisterEventHandler<EventBombDefused>(RealtimeBombDefusedHandler);
+            RegisterEventHandler<EventBombExploded>(RealtimeBombExplodedHandler);
+            RegisterEventHandler<EventPlayerConnectFull>(RealtimePlayerConnectHandler);
+            RegisterEventHandler<EventPlayerDisconnect>(RealtimePlayerDisconnectHandler);
             RegisterListener<Listeners.OnClientDisconnectPost>(playerSlot => { 
                // May not be required, but just to be on safe side so that player data is properly updated in dictionaries
                // Update: Commenting the below function as it was being called multiple times on map change.
