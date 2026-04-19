@@ -1,0 +1,77 @@
+name: Deploy to Servers
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+    paths-ignore:
+      - "documentation/**"
+      - "*.md"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0"
+
+      - name: Publish
+        run: dotnet publish -o publish/MatchZy
+
+      - name: Create MatchZy.zip
+        run: cd publish/MatchZy && zip -qr ../../MatchZy.zip . && cd ../..
+
+      - name: Deploy to servers
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SERVERS: ${{ vars.DEPLOY_SERVERS }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          echo "$DEPLOY_SERVERS" | jq -c '.[]' | while read -r server; do
+            host=$(echo "$server" | jq -r '.host')
+            port=$(echo "$server" | jq -r '.port // 22')
+            user=$(echo "$server" | jq -r '.user // "root"')
+            path=$(echo "$server" | jq -r '.path')
+            SSH_CMD="ssh -i ~/.ssh/deploy_key -p $port -o StrictHostKeyChecking=no"
+
+            echo "::group::Deploying to $host:$path"
+
+            ssh-keyscan -p "$port" "$host" >> ~/.ssh/known_hosts 2>/dev/null
+
+            $SSH_CMD "$user@$host" bash -s -- "$path" <<'REMOTE_SCRIPT'
+              PLUGIN_DIR="$1"
+              mkdir -p "$PLUGIN_DIR"
+
+              # Backup current contents (excluding old archives)
+              if [ "$(ls -A "$PLUGIN_DIR" 2>/dev/null | grep -v '^MatchZy\.zip$' | grep -v '^MatchZy_backup\.zip$')" ]; then
+                cd "$PLUGIN_DIR"
+                rm -f MatchZy_backup.zip
+                zip -qr MatchZy_backup.zip . -x MatchZy.zip MatchZy_backup.zip
+                echo "Backup created: $PLUGIN_DIR/MatchZy_backup.zip"
+              else
+                echo "Plugin directory is empty, skipping backup"
+              fi
+
+              # Remove old deploy archive if exists
+              rm -f "$PLUGIN_DIR/MatchZy.zip"
+REMOTE_SCRIPT
+
+            scp -i ~/.ssh/deploy_key -P "$port" -o StrictHostKeyChecking=no \
+              MatchZy.zip "$user@$host:$path/MatchZy.zip"
+
+            echo "Uploaded MatchZy.zip to $host:$path/MatchZy.zip"
+            echo "::endgroup::"
+          done
+
+          rm -f ~/.ssh/deploy_key
