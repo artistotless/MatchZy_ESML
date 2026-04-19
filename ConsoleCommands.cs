@@ -738,7 +738,7 @@ namespace MatchZy
         }
 
         [ConsoleCommand("matchzy_version", "Shows MatchZy version and build commit hash")]
-        public void OnVersionCommand(CCSPlayerController? player, CommandInfo? command)
+        public void OnMatchZyVersionCommand(CCSPlayerController? player, CommandInfo? command)
         {
             string commitHash = Assembly.GetExecutingAssembly()
                 .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
