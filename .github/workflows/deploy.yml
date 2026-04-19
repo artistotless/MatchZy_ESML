@@ -24,7 +24,7 @@ jobs:
           dotnet-version: "8.0"
 
       - name: Publish
-        run: dotnet publish -o publish/MatchZy
+        run: dotnet publish -o publish/MatchZy /p:SourceRevisionId=$(git rev-parse --short HEAD)
 
       - name: Create MatchZy.tar.gz
         run: tar czf MatchZy.tar.gz -C publish/MatchZy .

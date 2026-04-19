@@ -4,6 +4,7 @@ using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Cvars;
 using CounterStrikeSharp.API.Modules.Utils;
+using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace MatchZy
@@ -734,6 +735,15 @@ namespace MatchZy
             }
 
             return HookResult.Stop;
+        }
+
+        [ConsoleCommand("matchzy_version", "Shows MatchZy version and build commit hash")]
+        public void OnVersionCommand(CCSPlayerController? player, CommandInfo? command)
+        {
+            string commitHash = Assembly.GetExecutingAssembly()
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                ?.InformationalVersion?.Split('+').LastOrDefault() ?? "unknown";
+            ReplyToUserCommand(player, $"MatchZy v{ModuleVersion} (commit: {commitHash})");
         }
     }
 }
