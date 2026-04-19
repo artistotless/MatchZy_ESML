@@ -333,41 +333,6 @@ public class RealtimePlayerDeathEvent : MatchZyEvent
     public RealtimePlayerDeathEvent() : base("player_death") { }
 }
 
-public class RealtimePlayerHurtEvent : MatchZyEvent
-{
-    [JsonPropertyName("matchid")]
-    public required string MatchId { get; init; }
-
-    [JsonPropertyName("map")]
-    public required string Map { get; init; }
-
-    [JsonPropertyName("map_number")]
-    public required int MapNumber { get; init; }
-
-    [JsonPropertyName("round_number")]
-    public required int RoundNumber { get; init; }
-
-    [JsonPropertyName("attacker")]
-    public RealtimePlayerInfo? Attacker { get; init; }
-
-    [JsonPropertyName("victim")]
-    public required RealtimePlayerInfo Victim { get; init; }
-
-    [JsonPropertyName("weapon")]
-    public required string Weapon { get; init; }
-
-    [JsonPropertyName("dmg_health")]
-    public required int DmgHealth { get; init; }
-
-    [JsonPropertyName("dmg_armor")]
-    public required int DmgArmor { get; init; }
-
-    [JsonPropertyName("hitgroup")]
-    public required int Hitgroup { get; init; }
-
-    public RealtimePlayerHurtEvent() : base("player_hurt") { }
-}
-
 public class RealtimeBombEvent : MatchZyEvent
 {
     [JsonPropertyName("matchid")]

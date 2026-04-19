@@ -217,7 +217,6 @@ namespace MatchZy
             // Realtime (GSI-like) event handlers
             RegisterEventHandler<EventRoundStart>(RealtimeRoundStartHandler);
             RegisterEventHandler<EventPlayerDeath>(RealtimePlayerDeathHandler);
-            RegisterEventHandler<EventPlayerHurt>(RealtimePlayerHurtHandler);
             RegisterEventHandler<EventBombPlanted>(RealtimeBombPlantedHandler);
             RegisterEventHandler<EventBombDefused>(RealtimeBombDefusedHandler);
             RegisterEventHandler<EventBombExploded>(RealtimeBombExplodedHandler);

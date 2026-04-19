@@ -67,37 +67,6 @@ public partial class MatchZy
         return HookResult.Continue;
     }
 
-    public HookResult RealtimePlayerHurtHandler(EventPlayerHurt @event, GameEventInfo info)
-    {
-        try
-        {
-            if (!matchStarted || !matchConfig.RealtimeEventsEnabled) return HookResult.Continue;
-
-            var victimInfo = BuildPlayerInfo(@event.Userid);
-            if (victimInfo == null) return HookResult.Continue;
-
-            (int t1score, int t2score) = GetTeamsScore();
-            _ = SendRealtimeEventAsync(new RealtimePlayerHurtEvent
-            {
-                MatchId    = liveMatchId,
-                Map        = CurrentMapName(),
-                MapNumber  = matchConfig.CurrentMapNumber,
-                RoundNumber = t1score + t2score,
-                Attacker   = BuildPlayerInfo(@event.Attacker),
-                Victim     = victimInfo,
-                Weapon     = @event.Weapon,
-                DmgHealth  = @event.DmgHealth,
-                DmgArmor   = @event.DmgArmor,
-                Hitgroup   = @event.Hitgroup,
-            });
-        }
-        catch (Exception e)
-        {
-            Log($"[RealtimePlayerHurtHandler FATAL] An error occurred: {e.Message}");
-        }
-        return HookResult.Continue;
-    }
-
     public HookResult RealtimeBombPlantedHandler(EventBombPlanted @event, GameEventInfo info)
     {
         try
