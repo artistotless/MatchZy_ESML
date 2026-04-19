@@ -164,6 +164,7 @@ namespace MatchZy
                 switch (field)
                 {
                     case "matchid":
+                        break;
                     case "players_per_team":
                     case "min_players_to_ready":
                     case "min_spectators_to_ready":
