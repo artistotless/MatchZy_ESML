@@ -11,6 +11,11 @@ public partial class MatchZy
     // when matchzy_realtime_events_enabled = 1)
     // -----------------------------------------------------------------------
 
+    /// <summary>
+    /// Map game event <c>bombsite index</c> to A/B. In CS2, index 0 is bombsite B and 1 is bombsite A (not 0=A as in older assumptions).
+    /// </summary>
+    private static string BombSiteIndexToLabel(int siteIndex) => siteIndex == 1 ? "A" : "B";
+
     public HookResult RealtimeRoundStartHandler(EventRoundStart @event, GameEventInfo info)
     {
         try
@@ -84,7 +89,7 @@ public partial class MatchZy
                 MapNumber  = matchConfig.CurrentMapNumber,
                 RoundNumber = t1score + t2score,
                 Player     = playerInfo,
-                Site       = @event.Site == 0 ? "A" : "B",
+                Site       = BombSiteIndexToLabel(@event.Site),
             });
         }
         catch (Exception e)
@@ -111,7 +116,7 @@ public partial class MatchZy
                 MapNumber  = matchConfig.CurrentMapNumber,
                 RoundNumber = t1score + t2score,
                 Player     = playerInfo,
-                Site       = @event.Site == 0 ? "A" : "B",
+                Site       = BombSiteIndexToLabel(@event.Site),
             });
         }
         catch (Exception e)
@@ -141,7 +146,7 @@ public partial class MatchZy
                     Alive = false, Hp = 0, Armor = 0, Money = 0,
                     Kills = 0, Deaths = 0, Assists = 0,
                 },
-                Site = @event.Site == 0 ? "A" : "B",
+                Site = BombSiteIndexToLabel(@event.Site),
             });
         }
         catch (Exception e)

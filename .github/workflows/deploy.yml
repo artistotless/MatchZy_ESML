@@ -1,4 +1,4 @@
-name: Deploy to Servers
+name: Create Server Release
 
 on:
   push:
@@ -10,9 +10,12 @@ on:
       - "*.md"
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  deploy:
-    name: Build & Deploy
+  release:
+    name: Build & Create Release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -29,33 +32,22 @@ jobs:
       - name: Create MatchZy.tar.gz
         run: tar czf MatchZy.tar.gz -C publish/MatchZy .
 
-      - name: Deploy to servers
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          DEPLOY_SERVERS: ${{ vars.DEPLOY_SERVERS }}
+      - name: Prepare release metadata
+        id: metadata
         run: |
-          mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          BRANCH_NAME="${GITHUB_REF_NAME//\//-}"
+          TAG_NAME="server-build-${BRANCH_NAME}-${GITHUB_RUN_NUMBER}-${SHORT_SHA}"
+          RELEASE_NAME="Server Build ${BRANCH_NAME} #${GITHUB_RUN_NUMBER} (${SHORT_SHA})"
+          echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
+          echo "release_name=$RELEASE_NAME" >> "$GITHUB_OUTPUT"
 
-          echo "$DEPLOY_SERVERS" | jq -c '.[]' | while read -r server; do
-            host=$(echo "$server" | jq -r '.host')
-            port=$(echo "$server" | jq -r '.port // 22')
-            user=$(echo "$server" | jq -r '.user // "root"')
-            path=$(echo "$server" | jq -r '.path')
-            SSH_CMD="ssh -i ~/.ssh/deploy_key -p $port -o StrictHostKeyChecking=no"
-
-            echo "::group::Deploying to $host:$path"
-
-            ssh-keyscan -p "$port" "$host" >> ~/.ssh/known_hosts 2>/dev/null
-
-            $SSH_CMD "$user@$host" "mkdir -p '$path' && cd '$path' && if ls -A . 2>/dev/null | grep -qvE '^MatchZy(_backup)?\.tar\.gz\$'; then tar czf /tmp/MatchZy_backup.tar.gz --exclude=MatchZy.tar.gz --exclude=MatchZy_backup.tar.gz . && mv -f /tmp/MatchZy_backup.tar.gz '$path/MatchZy_backup.tar.gz' && echo 'Backup created'; else echo 'No files to backup'; fi && rm -f MatchZy.tar.gz"
-
-            scp -i ~/.ssh/deploy_key -P "$port" -o StrictHostKeyChecking=no \
-              MatchZy.tar.gz "$user@$host:$path/MatchZy.tar.gz"
-
-            echo "Uploaded MatchZy.tar.gz to $host:$path/MatchZy.tar.gz"
-            echo "::endgroup::"
-          done
-
-          rm -f ~/.ssh/deploy_key
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.metadata.outputs.tag_name }}
+          name: ${{ steps.metadata.outputs.release_name }}
+          generate_release_notes: true
+          prerelease: ${{ github.ref_name == 'dev' }}
+          files: |
+            MatchZy.tar.gz
