@@ -552,6 +552,13 @@ namespace MatchZy
             RegisterEventHandler<EventDecoyStarted>(EventDecoyDetonateHandler);
 
             Console.WriteLine($"[{ModuleName} {ModuleVersion} LOADED] MatchZy by WD- (https://github.com/shobhit-pathak/)");
+
+            InitializeEsmlIntegration();
+        }
+
+        public override void Unload(bool hotReload)
+        {
+            ShutdownEsmlIntegration();
         }
     }
 }
